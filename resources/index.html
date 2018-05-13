@@ -67,18 +67,24 @@ function result_increase(n) {
     obj.innerHTML = `Found ${count} items`;
 }
 
+function notification_clear() {
+    var obj = document.getElementById('container-notify');
+    obj.innerHTML = '';
+}
+
 function notify(msg) {
-    var parent = document.getElementById('container-noitfy');
+    var parent = document.getElementById('container-notify');
     var obj = document.createElement('div');
-    obj.className = 'notification is-primary';
-    obj.innerHTML = msg;
-    parent.appendChildNode(obj);
+    obj.className = 'notification is-danger';
+    obj.innerHTML = `<button class="delete" onclick="notification_clear()"></button> ${msg}`;
+    parent.appendChild(obj);
 }
 
 function f() {
     var qs = document.getElementById("q").value.replace(/　/g, ' ').trim();
     if (qs === '') return;
     result_clear();
+    notification_clear();
     qs = qs.split(' ').map(encodeURIComponent).join(',');
     get(qs, 'container-bookshelf');
 }
@@ -135,6 +141,7 @@ function get(qs, idName) {
 
 if (location.search && location.search[0] == '?') {
     result_clear();
+    notification_clear();
     get(location.search.slice(1), 'container-bookshelf');
 }
 

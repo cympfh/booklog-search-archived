@@ -16,7 +16,6 @@ http.get('http://httpbin.org/ip', (response) => {
     response.on('data', chunk => { data += chunk; });
     response.on('end', () => {
         myself = JSON.parse(data).origin;
-        myself = '127.0.0.1';
         console.log(`I am ${myself}`);
     });
 });

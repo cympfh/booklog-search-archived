@@ -8,7 +8,7 @@ for i in $(seq 1 10000); do
     if [ $(cat $PAGE | jq '.books | length') -eq 0 ]; then
         break
     fi
-    cat $PAGE | jq -cM '.books[]' >> $BOOKSHELF
+    cat $PAGE | jq -cM '.books[]' | nkf -Z1 >> $BOOKSHELF
     rm $PAGE
 done
 

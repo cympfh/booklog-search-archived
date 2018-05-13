@@ -1,0 +1,42 @@
+#!/bin/bash
+
+BOOKSHELF=/tmp/booklog.json
+
+grep-rec() {
+    if [ $# -eq 0 ]; then
+        cat
+    else
+        W="$1"
+        shift
+        cat | grep -i "$W" | grep-rec "$@"
+    fi
+}
+
+if [ -f $BOOKSHELF ]; then
+
+    cur=$(date '+%s')
+    mod=$(date -r $BOOKSHELF '+%s')
+    INFO=ok
+
+    JQ_QUERY=$(
+        cat $BOOKSHELF | jq -r '"\(.book_id)\t\(.title) \(.item.authors | join(" "))"' |
+        grep-rec "$@" |
+        awk '{print ".book_id==\""$1"\""}' |
+        tr '\n' '@' | sed 's/@$//g; s/@/ or /g'
+    )
+
+    echo "{\"msg\": \"${INFO}\", \"result\":"
+    jq "if ${JQ_QUERY} then . else empty end" $BOOKSHELF |
+    jq -scM .
+    echo "}"
+
+    if (( cur - mod > 12 * 60 * 60 )); then
+        bash ./scripts/cache-bookshelf &
+    fi
+
+else
+
+    echo '{"msg": "Cache not found. Please visit later", "result": []}'
+    bash ./scripts/cache-bookshelf &
+
+fi

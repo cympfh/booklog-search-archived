@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+  <title>/cympfh/books</title>
+
+  <style>
+time {
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    color: #777;
+}
+span.title {
+    font-size: 1.1rem;
+}
+span.authors {
+    font-size: 0.9rem;
+}
+span.authors::before {
+    content: "by";
+    color: #777;
+    margin: 0 0.2rem 0 0.3rem;
+    font-size: 0.7rem;
+}
+  </style>
+
+  <script>
+
+function make_html(item) {
+    if (!item.review) {
+        item.review = {description: ""};
+    }
+    return `
+<article class="media">
+    <figure class="media-left">
+        <p class="image is-128x128"><img src="${item.image_2x}"></p>
+    </figure>
+    <div class="media-content">
+        <p><span class="title">${item.title}</span>
+        <span class="authors">${item.item.authors.join(' ')}</span></p>
+        <div class="tags">
+            <span class="tag">${item.category_name}</span>
+            ${ item.tags.map(t => `<span class=tag>${t}</span>`).join('') }
+        </div>
+        <p class=review>
+        <time>${item.create_on}</time>
+        ${item.review.description}</p>
+    </div>
+</article>`;
+}
+
+
+var count = 0;
+function result_clear() {
+    count = 0;
+    var obj = document.getElementById('container-result');
+    obj.innerHTML = 'searching...';
+}
+
+function result_increase(n) {
+    count += n;
+    var obj = document.getElementById('container-result');
+    obj.innerHTML = `Found ${count} items`;
+}
+
+function notify(msg) {
+    var parent = document.getElementById('container-noitfy');
+    var obj = document.createElement('div');
+    obj.className = 'notification is-primary';
+    obj.innerHTML = msg;
+    parent.appendChildNode(obj);
+}
+
+function f() {
+    var qs = document.getElementById("q").value.replace(/　/g, ' ').trim();
+    if (qs === '') return;
+    result_clear();
+    qs = qs.split(' ').map(encodeURIComponent).join(',');
+    get(qs, 'container-bookshelf');
+}
+
+function get(qs, idName) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', `@MYSELF/books/api/bookshelf?q=${qs}`, true);
+    xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+
+                var data = JSON.parse(xhr.responseText);
+                if (data.msg !== 'ok') {
+                    notify(data.msg);
+                }
+
+                var obj = document.getElementById(idName);
+                obj.innerHTML = '';
+                data.result.forEach(function(datum) {
+                    obj.innerHTML += make_html(datum);
+                });
+
+                result_increase(data.result.length);
+            }
+        }
+    };
+    xhr.send(null);
+}
+
+  </script>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <h1 class="title"><i class="fa fa-book"></i> cympfh/books</h1>
+      <div class="field has-addons has-addons-centered">
+        <form onsubmit="f(); return false" class="control" style="width: 45%">
+          <input class="input" type="text" id="q" placeholder="Search with keywords">
+        </form>
+        <p class="control">
+          <a class="button is-primary" onclick="f()">Search</a>
+        </p>
+      </div>
+    </div>
+
+    <div style="height:1em"></div>
+    <div class="container" id="container-result"></div>
+    <div class="container" id="container-notify"></div>
+    <div class="container" id="container-bookshelf"></div>
+  </section>
+
+  <script>
+
+if (location.search && location.search[0] == '?') {
+    result_clear();
+    get(location.search.slice(1), 'container-bookshelf');
+}
+
+  </script>
+  <p>私が読んだ本検索</p>
+</body>
+</html>
+

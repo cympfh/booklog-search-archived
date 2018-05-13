@@ -1,0 +1,24 @@
+{
+  "name": "booklog-search",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "bash scripts/cache-bookshelf && node server.js",
+    "test": "date"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/cympfh/booklog-search"
+  },
+  "keywords": [
+    "booklog"
+  ],
+  "author": "cympfh",
+  "license": "MIT",
+  "dependencies": {
+    "argv": "0.0.2",
+    "express": "^4.16.3",
+    "morgan": "^1.9.0"
+  }
+}

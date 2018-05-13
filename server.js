@@ -47,13 +47,15 @@ app.use(morgan('dev', {immediate: true}));
  * index page
  */
 
-app.get('/books', function (req, res) {
+app.get('/books', (req, res) => {
     fs.readFile("resources/index.html", (err, data) => {
         data = data.toString().replace(/@MYSELF/g, `http://${myself}:${args.options.port}`);
         res.writeHead(200);
         res.end(data);
     });
 });
+app.get('/', (req, res) => { res.redirect('/books'); });
+app.get('/book', (req, res) => { res.redirect('/books'); });
 
 /*
  * API
@@ -95,6 +97,6 @@ app.get('/books/api/bookshelf', exec('scripts/bookshelf'))
  * Listen
  */
 
-app.listen(args.options.port, function () {
+app.listen(args.options.port, () => {
     console.log(`Listen on ${args.options.port}`);
 });

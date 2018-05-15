@@ -69,29 +69,23 @@ function get_query(request_url) {
     return words
 }
 
-function exec(scriptFile) {
-    return (req, res) => {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        let words = get_query(req.url);
-        if (words) {
-            console.log('---');
-            console.log(`Command: ${scriptFile} ${words}`);
-            execFile(scriptFile, words, (err, stdout, stderr) => {
-                console.log(`Stdout: ${stdout.slice(0, 60)}`);
-                if (stdout) {
-                    res.send(stdout);
-                } else {
-                    res.send([]);
-                }
-                console.log('---');
-            });
-        } else {
-            res.send([]);
-        }
-    };
-}
-
-app.get('/books/api/bookshelf', exec('scripts/bookshelf'))
+app.get('/books/api/bookshelf', (req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    let words = get_query(req.url);
+    if (words) {
+        console.log(`Command: ${words}`);
+        execFile('scripts/bookshelf', ['search'].concat(words), (err, stdout, stderr) => {
+            if (stdout) {
+                res.send(stdout);
+            } else {
+                res.send([]);
+            }
+            execFile('scripts/bookshelf', ['update'], () => {});
+        });
+    } else {
+        res.send([]);
+    }
+});
 
 /*
  * Listen

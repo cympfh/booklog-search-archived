@@ -1,6 +1,45 @@
 #!/bin/bash
 
 BOOKSHELF=/tmp/booklog.json
+THRESHOLD=$(( 12 * 60 * 60 ))  # sec
+
+lock() {
+    LOCKFILE=/tmp/booklog.lock.XXXX
+    if [ -f $LOCKFILE ]; then
+        exit
+    fi
+    : > $LOCKFILE
+}
+
+unlock() {
+    rm $LOCKFILE
+}
+
+cache-is-old() {
+    if [ -f $BOOKSHELF ]; then
+        cur=$(date '+%s')
+        mod=$(date -r $BOOKSHELF '+%s')
+        (( cur - mod > THRESHOLD ))
+    else
+        true
+    fi
+}
+
+cache-update() {
+    lock
+    TMP=$(mktemp)
+    PAGE=$(mktemp)
+    for i in $(seq 1 10000); do
+        curl "https://booklog.jp/users/cympfh/all?category_id=all&status=all&sort=sort_desc&rank=all&tag=&page=${i}&keyword=&reviewed=&quoted=&json=true" > $PAGE
+        if [ $(cat $PAGE | jq '.books | length') -eq 0 ]; then
+            break
+        fi
+        cat $PAGE | jq -cM '.books[]' >> $TMP
+    done
+    mv $TMP $BOOKSHELF
+    rm $PAGE
+    unlock
+}
 
 grep-rec() {
     if [ $# -eq 0 ]; then
@@ -8,35 +47,60 @@ grep-rec() {
     else
         W="$1"
         shift
-        cat | grep -i "$W" | grep-rec "$@"
+        cat | grep -i "	.*$W" | grep-rec "$@"
     fi
 }
 
-if [ -f $BOOKSHELF ]; then
+search() {
 
-    cur=$(date '+%s')
-    mod=$(date -r $BOOKSHELF '+%s')
-    INFO=ok
+    if [ -f $BOOKSHELF ]; then
 
-    JQ_QUERY=$(
-        cat $BOOKSHELF | jq -r '"\(.book_id)\t\(.title) \(.item.authors | join(" "))"' |
-        grep-rec "$@" |
-        awk '{print ".book_id==\""$1"\""}' |
-        tr '\n' '@' | sed 's/@$//g; s/@/ or /g'
-    )
+        INFO=ok
+        JQ_QUERY=$(
+            cat $BOOKSHELF | jq -r '"\(.book_id)\t\(.title) \(.item.authors | join(" "))"' |
+                nkf -Z1 |
+                grep-rec "$@" |
+                awk '{print ".book_id==\""$1"\""}' |
+                tr '\n' '@' | sed 's/@$//g; s/@/ or /g'
+        )
 
-    echo "{\"msg\": \"${INFO}\", \"result\":"
-    jq "if ${JQ_QUERY} then . else empty end" $BOOKSHELF |
-    jq -scM .
-    echo "}"
+        if cache-is-old; then
+            INFO="Warning: Cache is older than 12hr. Cache will be refreshed soon (around 1min)."
+        fi
 
-    if (( cur - mod > 12 * 60 * 60 )); then
-        bash ./scripts/cache-bookshelf &
+        if [ -z "$JQ_QUERY" ]; then
+            cat <<EOM
+{"msg": "$INFO", "result": []}
+EOM
+        else
+            cat <<EOM
+{"msg": "$INFO", "result": $(
+            jq -sM "[limit(100; .[] | if ${JQ_QUERY} then . else empty end )]" $BOOKSHELF
+)}
+EOM
+        fi
+
+    else
+
+        echo '{"msg": "Cache not found. Please visit later (around 1min).", "result": []}'
+
     fi
+}
 
-else
-
-    echo '{"msg": "Cache not found. Please visit later", "result": []}'
-    bash ./scripts/cache-bookshelf &
-
-fi
+case "$1" in
+    cache | update )
+        if cache-is-old; then
+            echo Update
+            cache-update
+        else
+            echo Keep
+        fi
+        ;;
+    cache-force | update-force )
+        cache-update
+        ;;
+    grep | search )
+        shift
+        search $@
+        ;;
+esac

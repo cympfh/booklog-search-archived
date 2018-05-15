@@ -47,7 +47,15 @@ grep-rec() {
     else
         W="$1"
         shift
-        cat | grep -i "	.*$W" | grep-rec "$@"
+        case "$W" in
+            -* )
+                W=${W#-}
+                cat | grep -i -v "	.*$W" | grep-rec "$@"
+                ;;
+            * )
+                cat | grep -i "	.*$W" | grep-rec "$@"
+                ;;
+        esac
     fi
 }
 

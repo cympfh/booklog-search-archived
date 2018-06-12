@@ -1,7 +1,8 @@
 #!/bin/bash
 
 BOOKSHELF=/tmp/booklog.json
-THRESHOLD=$(( 12 * 60 * 60 ))  # sec
+OLD=$(( 1 * 60 * 60 ))  # 1hr
+TOOOLD=$(( 12 * 60 * 60 ))  # 12hr
 
 lock() {
     LOCKFILE=/tmp/booklog.lock.XXXX
@@ -19,7 +20,17 @@ cache-is-old() {
     if [ -f $BOOKSHELF ]; then
         cur=$(date '+%s')
         mod=$(date -r $BOOKSHELF '+%s')
-        (( cur - mod > THRESHOLD ))
+        (( cur - mod > OLD ))
+    else
+        true
+    fi
+}
+
+cache-is-too-old() {
+    if [ -f $BOOKSHELF ]; then
+        cur=$(date '+%s')
+        mod=$(date -r $BOOKSHELF '+%s')
+        (( cur - mod > TOOOLD ))
     else
         true
     fi
@@ -72,8 +83,8 @@ search() {
                 tr '\n' '@' | sed 's/@$//g; s/@/ or /g'
         )
 
-        if cache-is-old; then
-            INFO="Warning: Cache is older than 12hr. Cache will be refreshed soon (around 1min)."
+        if cache-is-too-old; then
+            INFO="Warning: Cache is older than 1hr. Cache will be refreshed soon (around 1min)."
         fi
 
         if [ -z "$JQ_QUERY" ]; then

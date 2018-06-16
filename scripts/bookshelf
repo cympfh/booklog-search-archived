@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BOOKSHELF=/tmp/booklog.json
-OLD=$(( 1 * 60 * 60 ))  # 1hr
+OLD=$(( 5 * 60 ))  # 5min
 TOOOLD=$(( 12 * 60 * 60 ))  # 12hr
 
 lock() {
@@ -84,7 +84,7 @@ search() {
         )
 
         if cache-is-too-old; then
-            INFO="Warning: Cache is older than 1hr. Cache will be refreshed soon (around 1min)."
+            INFO="Warning: Cache is older than 1hr. Cache will be refreshed soon. This may take around 1min."
         fi
 
         if [ -z "$JQ_QUERY" ]; then

@@ -1,4 +1,3 @@
 ```bash
-npm i
-npm start
+make serve
 ```

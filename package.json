@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "bash scripts/cache-bookshelf && node server.js",
+    "start": "node server.js",
     "test": "date"
   },
   "repository": {

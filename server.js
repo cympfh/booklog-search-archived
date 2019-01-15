@@ -58,6 +58,20 @@ app.get('/', (req, res) => { res.redirect('/books'); });
 app.get('/book', (req, res) => { res.redirect('/books'); });
 
 /*
+ * booklog command API
+ */
+function search(words, cont) {
+    execFile('scripts/bookshelf', ['search'].concat(words), cont);
+}
+
+function update(cont) {
+    console.log("Updating...");
+    execFile('scripts/bookshelf', ['update'], () => {
+        console.log("Updated");
+    });
+}
+
+/*
  * API
  */
 
@@ -74,13 +88,12 @@ app.get('/books/api/bookshelf', (req, res) => {
     let words = get_query(req.url);
     if (words) {
         console.log(`Command: ${words}`);
-        execFile('scripts/bookshelf', ['search'].concat(words), (err, stdout, stderr) => {
+        search(words, (err, stdout, stderr) => {
             if (stdout) {
                 res.send(stdout);
             } else {
                 res.send([]);
             }
-            execFile('scripts/bookshelf', ['update'], () => {});
         });
     } else {
         res.send([]);
@@ -88,8 +101,11 @@ app.get('/books/api/bookshelf', (req, res) => {
 });
 
 /*
- * Listen
+ * Server starts
  */
+
+update();
+setInterval(update, 10 * 60 * 1000);
 
 app.listen(args.options.port, () => {
     console.log(`Listen on ${args.options.port}`);
